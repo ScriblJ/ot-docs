@@ -1,16 +1,131 @@
 ---
-title: ❌ UNFINISHED ARTICLE
-description: UNFINISHED ARTICLE
-keywords: [open-ticket, open ticket, developer, plugins, discord ticket bot, framework, guide]
+title: 🛠️ Your Json Database  
+description: How to Create a Database  
+keywords: [open-ticket, open ticket, developer, plugins, discord ticket bot, framework, guide]  
 ---
 <head>
     <link rel="apple-touch-icon" href="/img/logo_vertical.png"/>
 </head>
 import {C,M,ScaleImage,LinkBlock,InlineLink,FlexHorizontal,Divider,Hex,ApiUrl,ApiBlock,StyledTitle} from "@site/src/components/openticket.jsx"
 
-# 🏗️ Under Construction
-:::warning under construction
-We are still working this **Article**! This page might be incomplete or doesn't contain all details!
+### 🛠️ Your Json Database  
+<FlexHorizontal>
+<div style={{width:"50%"}} className="otdocs-flex-mobile-width">
+Open Ticket uses a JSON file-based database. With a dedicated interaction class, you can manage the data within it.  
+By the end of this article, you'll have your own database for storing and/or transferring information.
+</div>
+<div style={{width:"50%"}} className="otdocs-flex-mobile-width">
+    <StyledTitle title="Framework Article" description="Basic Plugins - Your First Plugin"></StyledTitle>
+</div>
+</FlexHorizontal>
 
-If you would like to contribute, please visit the [OT Docs Repository](https://github.com/open-discord-bots/ot-docs).
+<Divider></Divider>
+### 📝 General Information
+
+The Open Ticket databases and plugin databases by default reside in the `./database` directory and are JSON files.  
+Because JSON is used, please consider information security aspects — data is stored exactly as you save it.  
+You can modify database values and individual database entries.
+
+:::tips tips
+For high-load projects, we recommend using an SQLite plugin or your own custom solution.
 :::
+
+Before we start, ensure that you have the following:
+- Familiarized yourself with all articles in the Basic Plugin section  
+- Created the plugin structure and all necessary files  
+
+<Divider></Divider>
+### 1️⃣ Structure  
+Before creating the database, it is recommended to design it, defining data types and structure.  
+:::warning warning
+- Changing the database structure will cause data loss in the modified keys  
+- Do not change the root keys ``category``, ``key``, or ``value`` — this will cause errors.
+:::
+
+### `index.ts`  
+Use your development environment's IntelliSense to explore types and interfaces in detail.  
+```ts showLineNumbers title="index.ts"
+import {api, opendiscord, utilities} from "#opendiscord"
+import * as discord from "discord.js"
+if (utilities.project !== "openticket") throw new api.ODPluginError("This plugin only works in Open Ticket!")
+
+const myDatabaseFormatter = new fjs.ArrayFormatter(null,true,new fjs.ObjectFormatter(null,true,[
+    new fjs.PropertyFormatter("category"), 
+    new fjs.PropertyFormatter("key"), // PropertyFormatter - string parameter.
+    new fjs.ObjectFormatter("value",true,[ // ObjectFormatter - for arrays and objects
+        new fjs.PropertyFormatter("custom1"),
+        new fjs.PropertyFormatter("custom2"),
+        new fjs.PropertyFormatter("custom3"),
+    ])
+]))
+```
+
+<Divider></Divider>
+### 2️⃣ Database Initialization
+
+Events related to databases:  
+- `onDatabaseLoad` — Use for database creation in plugins  
+- `afterDatabasesLoaded` — Use for injecting into the Open Ticket database  
+- `onDatabaseInit` — Use for injecting into plugins  
+- `afterDatabasesInitiated` — Use for injection/modification  
+
+### `index.ts`  
+Use your development environment's IntelliSense to explore types and interfaces in detail.  
+```ts showLineNumbers title="index.ts"
+import {api, opendiscord, utilities} from "#opendiscord"
+import * as discord from "discord.js"
+if (utilities.project !== "openticket") throw new api.ODPluginError("This plugin only works in Open Ticket!")
+
+const myDatabaseFormatter = new fjs.ArrayFormatter(null,true,new fjs.ObjectFormatter(null,true,[
+    new fjs.PropertyFormatter("category"), 
+    new fjs.PropertyFormatter("key"), // PropertyFormatter - string parameter.
+    new fjs.ObjectFormatter("value",true,[ // ObjectFormatter - for arrays and objects
+        new fjs.PropertyFormatter("custom1"),
+        new fjs.PropertyFormatter("custom2"),
+        new fjs.PropertyFormatter("custom3"),
+    ])
+]))
+// New code
+opendiscord.events.get("onDatabaseLoad").listen((databases) => {
+    databases.add(new api.ODFormattedJsonDatabase("example-plugin:database","mydb.json",myDatabaseFormatter,"./database/"))
+})
+```
+In this example, the database is initialized on the `onDatabaseLoad` event:  
+- `"example-plugin:database"` — ID within Open Ticket. The word `database` is optional.  
+- `"mydb.json"` — Database file name  
+- `myDatabaseFormatter` — JSON structure formatter  
+- `"./database/"` — Path where the database file will be created  
+
+:::tips tips
+- There is no limit on the number of databases  
+- Remember that data is stored in plain JSON (information security considerations)
+:::
+
+### 3️⃣ Using the Database
+
+### `example_usage.ts`  
+Use your development environment's IntelliSense to explore types and interfaces in detail.  
+```ts showLineNumbers title="example_usage.ts"
+    // Get the database instance, not the raw data.
+    const database = opendiscord.databases.get("example-plugin:database");
+    // Examples of setting values
+    database.set("summary","key",1);
+    database.set("example-plugin:category","key",{custom1:"value1",custom2:"value1",custom3:"value1"});
+    // Examples of getting values
+    database.get("summary","key");
+    database.get("example-plugin:category","key");
+    // Examples of deleting values
+    database.delete("summary","key");
+    database.delete("example-plugin:category","key");
+    // Examples of checking existence
+    database.exists("summary","key");
+    database.exists("example-plugin:category","key");
+    // Example of iteration
+    for (const row of (await database.getAll())){
+        // your code here
+    }
+```
+
+<Divider></Divider>
+### 🏆 Summary  
+Congratulations! You’ve learned how to create and use databases in the Open Ticket Framework!
